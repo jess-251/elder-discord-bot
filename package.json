@@ -1,0 +1,62 @@
+{
+  "name": "discord-log-analysis-bot",
+  "version": "1.0.0",
+  "description": "A smart Discord bot that analyzes log files, provides intelligent troubleshooting, and maintains a growing knowledge base of solutions",
+  "main": "log.js",
+  "scripts": {
+    "start": "node log.js",
+    "mention": "node mention-bot.js",
+    "mention-dm": "node mention-bot-dm.js",
+    "mention-free": "node mention-bot-free.js",
+    "mention-simple": "node mention-bot-simple.js",
+    "mention-debug": "node mention-bot-debug.js",
+    "auto-save": "node mention-bot-auto-save.js",
+    "monitor": "./keep-bot-online.sh",
+    "test-minimal": "node test-minimal.js",
+    "dev": "nodemon log.js",
+    "dev-mention": "nodemon mention-bot.js",
+    "dev-mention-dm": "nodemon mention-bot-dm.js",
+    "dev-mention-free": "nodemon mention-bot-free.js",
+    "dev-mention-simple": "nodemon mention-bot-simple.js",
+    "dev-mention-debug": "nodemon mention-bot-debug.js",
+    "dev-auto-save": "nodemon mention-bot-auto-save.js",
+    "simple": "node simple-bot.js",
+    "test": "node test-bot.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "log-analysis",
+    "ai",
+    "openai",
+    "troubleshooting",
+    "automation",
+    "knowledge-base"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.24.1",
+    "pdf-parse": "^1.1.1",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/discord-log-analysis-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/discord-log-analysis-bot/issues"
+  },
+  "homepage": "https://github.com/yourusername/discord-log-analysis-bot#readme"
+}
