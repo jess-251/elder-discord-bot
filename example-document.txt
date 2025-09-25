@@ -1,0 +1,55 @@
+# Example Project Documentation
+
+## Overview
+This is an example project that demonstrates how to build a Discord bot with AI capabilities.
+
+## Features
+- Mention-based interaction
+- Document feeding and learning
+- AI-powered responses
+- Channel-specific contexts
+
+## Installation
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Set up environment variables
+4. Run the bot with `npm run mention`
+
+## Configuration
+The bot requires two environment variables:
+- DISCORD_TOKEN: Your Discord bot token
+- OPENAI_API_KEY: Your OpenAI API key
+
+## Usage
+1. Upload documents to any channel
+2. Mention the bot with @BotName
+3. Ask questions about the uploaded content
+4. The bot will respond using context from the documents
+
+## API Endpoints
+- POST /api/upload - Upload a document
+- GET /api/documents - List all documents
+- DELETE /api/documents/:id - Delete a document
+
+## Error Handling
+The bot includes comprehensive error handling:
+- File size limits (10MB max)
+- Format validation
+- Rate limiting
+- Graceful fallbacks
+
+## Security
+- Channel isolation prevents data leaks
+- Local SQLite database
+- No permanent file storage
+- Secure API key handling
+
+## Troubleshooting
+Common issues and solutions:
+1. Bot not responding - Check if it's online
+2. File upload fails - Ensure file is under 10MB
+3. AI errors - Verify OpenAI API key is valid
+4. Database errors - Check file permissions
+
+## Support
+For help, mention the bot and ask your question! 
