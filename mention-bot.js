@@ -481,29 +481,10 @@ IMPORTANT INSTRUCTIONS:
 	}
 
 	/**
-	 * Start a simple web server for Render
-	 */
-	startWebServer() {
-		const server = http.createServer((req, res) => {
-			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			res.end('🥷 Elder Discord Bot is running!');
-		});
-
-		const port = process.env.PORT || 3000;
-		server.listen(port, () => {
-			console.log(`🌐 Web server running on port ${port}`);
-		});
-	}
-
-	/**
 	 * Start the bot
 	 */
 	async start() {
 		try {
-			// Start web server for Render
-			this.startWebServer();
-			
-			// Start Discord bot
 			await this.client.login(process.env.DISCORD_TOKEN);
 		} catch (error) {
 			console.error('Failed to start bot:', error);
@@ -512,6 +493,17 @@ IMPORTANT INSTRUCTIONS:
 	}
 }
 
-// Start the bot
-const bot = new MentionBot();
-bot.start().catch(console.error); 
+// Start web server immediately for Render
+const port = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+	res.writeHead(200, { 'Content-Type': 'text/plain' });
+	res.end('🥷 Elder Discord Bot is running!');
+});
+
+server.listen(port, () => {
+	console.log(`🌐 Web server running on port ${port}`);
+	
+	// Start the Discord bot after web server is ready
+	const bot = new MentionBot();
+	bot.start().catch(console.error);
+}); 
