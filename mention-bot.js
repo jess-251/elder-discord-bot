@@ -149,13 +149,13 @@ class MentionBot {
 			// Show typing indicator
 			await message.channel.sendTyping();
 
-			// Determine document scope: label-specific or entire channel
+			// Only get documents if user is asking to use a specific label
 			let documents = [];
 			if (label) {
+				// User is asking to use a specific memory label
 				documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
-			} else {
-				documents = await this.getChannelDocuments(message.channel.id);
 			}
+			// If no label specified, don't load any documents - just do web search
 			
 			// Generate response using AI
 			const response = await this.generateResponse(question, documents, message.channel.id, label);
@@ -311,33 +311,7 @@ class MentionBot {
 	 */
 	async generateResponse(question, documents, channelId, label) {
 		try {
-			// Check if this is a real-time query
-			const isRealTimeQuery = this.needsRealTimeInfo(question);
-			
-			if (isRealTimeQuery) {
-				// For real-time queries, get current information and provide it directly
-				const searchResults = await this.performWebSearch(question);
-				
-				// Create a concise system prompt for real-time queries
-				const systemPrompt = `You are a helpful AI assistant. The user is asking about: "${question}"
-
-Current information: ${searchResults}
-
-Provide current information directly. Be helpful and informative.`;
-
-			const completion = await this.openai.chat.completions.create({
-				model: 'gpt-4o',
-				messages: [
-					{ role: 'system', content: systemPrompt },
-					{ role: 'user', content: `Please provide current information about: ${question}` }
-				],
-				max_tokens: 500,
-				temperature: 0.4
-			});
-
-			return completion.choices[0].message.content;
-				
-			} else if (documents.length > 0) {
+			if (documents.length > 0) {
 				// For document-based queries, use uploaded documents
 				let systemPrompt = `You are a helpful AI assistant. Answer clearly and concisely using the provided documents.`;
 				let contextInfo = `\n\nYou have access to the following ${label ? `memory set \"${label}\"` : 'documents'} for context. Quote relevant excerpts and be precise.\n\n`;
@@ -354,22 +328,27 @@ Provide current information directly. Be helpful and informative.`;
 						{ role: 'system', content: systemPrompt },
 						{ role: 'user', content: question }
 					],
-					max_tokens: 1500,
+					max_tokens: 1000,
 					temperature: 0.4
 				});
 
 				return completion.choices[0].message.content;
 			} else {
-				// For general queries without documents
-				const systemPrompt = `You are a helpful AI assistant. Answer clearly and concisely.`;
+				// For general queries without documents, do web search
+				const searchResults = await this.performWebSearch(question);
+				const systemPrompt = `You are a helpful AI assistant. The user is asking about: "${question}"
+
+Current information: ${searchResults}
+
+Provide current information directly. Be helpful and informative.`;
 
 				const completion = await this.openai.chat.completions.create({
 					model: 'gpt-4o',
 					messages: [
 						{ role: 'system', content: systemPrompt },
-						{ role: 'user', content: question }
+						{ role: 'user', content: `Please provide current information about: ${question}` }
 					],
-					max_tokens: 1500,
+					max_tokens: 500,
 					temperature: 0.4
 				});
 
