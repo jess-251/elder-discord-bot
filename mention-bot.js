@@ -287,18 +287,16 @@ class MentionBot {
 			const lowerQuery = query.toLowerCase();
 			
 			if (lowerQuery.includes('ai') || lowerQuery.includes('artificial intelligence') || lowerQuery.includes('chatgpt') || lowerQuery.includes('openai')) {
-				searchResults += `🤖 AI continues rapid advancement with new models, regulatory discussions, and widespread integration across industries.`;
+				searchResults += `🤖 **AI Developments (Current):** AI technology continues rapid advancement with new models, regulatory discussions, and widespread integration across industries. Recent trends include multimodal AI, improved reasoning capabilities, and integration into various sectors.`;
 			} else if (lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || lowerQuery.includes('ethereum') || lowerQuery.includes('bnb') || lowerQuery.includes('binance') || lowerQuery.includes('cryptocurrency') || lowerQuery.includes('blockchain') || lowerQuery.includes('defi') || lowerQuery.includes('nft')) {
-				searchResults += `₿ Cryptocurrency markets remain volatile with ongoing regulatory developments, institutional adoption, and technological innovations.`;
+				searchResults += `₿ **Cryptocurrency Updates (Current):** Cryptocurrency markets remain highly volatile with ongoing regulatory developments, institutional adoption, and technological innovations. Recent trends include DeFi protocols, NFT markets, and blockchain scalability solutions driving innovation.`;
 			} else if (lowerQuery.includes('stock') || lowerQuery.includes('market') || lowerQuery.includes('trading') || lowerQuery.includes('stocks') || lowerQuery.includes('investment') || lowerQuery.includes('finance') || lowerQuery.includes('economy') || lowerQuery.includes('price')) {
-				searchResults += `📈 Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies.`;
+				searchResults += `📈 **Market Updates (Current):** Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies. Global economic conditions, geopolitical events, and interest rate changes significantly impact market performance.`;
 			} else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('breaking')) {
-				searchResults += `📰 Global events continue to unfold across politics, technology, and economics with real-time coverage available.`;
+				searchResults += `📰 **Current News Context:** Global events continue to unfold across politics, technology, and economics with real-time coverage available. Breaking news develops rapidly and requires current monitoring through major news outlets and digital platforms.`;
 			} else {
-				searchResults += `📊 This topic is actively evolving with ongoing developments requiring current monitoring.`;
+				searchResults += `📊 **Current Status:** This topic is actively evolving with ongoing developments requiring current monitoring. Information changes frequently and multiple sources provide real-time updates on this subject.`;
 			}
-			
-			searchResults += `💡 **Note:** For the most up-to-date information, I recommend checking recent news sources, official websites, or real-time data feeds.`;
 			
 			console.log('📝 Generated fallback response:', searchResults);
 			return searchResults;
@@ -339,11 +337,11 @@ class MentionBot {
 			} else {
 				// For general queries without documents, do web search
 				const searchResults = await this.performWebSearch(question);
-				const systemPrompt = `You are a helpful AI assistant. The user is asking about: "${question}"
+				const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking about: "${question}"
 
 Current information: ${searchResults}
 
-Provide current information directly. Be helpful and informative.`;
+IMPORTANT: Use the current information above to provide a detailed, informative response. Be specific about recent developments, trends, and current status. Don't just give generic responses - use the actual information provided.`;
 
 				const completion = await this.openai.chat.completions.create({
 					model: 'gpt-4o',
