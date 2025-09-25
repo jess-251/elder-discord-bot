@@ -2,9 +2,9 @@
   "name": "discord-log-analysis-bot",
   "version": "1.0.0",
   "description": "🥷 Elder Discord Bot with real-time AI capabilities and document management",
-  "main": "log.js",
+  "main": "mention-bot.js",
   "scripts": {
-    "start": "node log.js",
+    "start": "node mention-bot.js",
     "mention": "node mention-bot.js",
     "mention-dm": "node mention-bot-dm.js",
     "mention-free": "node mention-bot-free.js",
