@@ -276,11 +276,11 @@ class MentionBot {
 				console.log('❌ DuckDuckGo search failed:', ddgError.message);
 			}
 			
-			// Enhanced fallback with current context
+			// Enhanced fallback with current context (limited to prevent token overflow)
 			const currentDate = new Date().toLocaleDateString();
 			searchResults = `**Current Information (${currentDate}):**\n\n`;
 			
-			// Provide specific current context based on query
+			// Provide specific current context based on query (keep it concise)
 			const lowerQuery = query.toLowerCase();
 			
 			if (lowerQuery.includes('ai') || lowerQuery.includes('artificial intelligence') || lowerQuery.includes('chatgpt') || lowerQuery.includes('openai')) {
@@ -354,17 +354,17 @@ IMPORTANT INSTRUCTIONS:
 6. If the search results contain specific details, use them
 7. Format your response clearly with current information`;
 
-				const completion = await this.openai.chat.completions.create({
-					model: 'gpt-4o',
-					messages: [
-						{ role: 'system', content: systemPrompt },
-						{ role: 'user', content: `Please provide current information about: ${question}` }
-					],
-					max_tokens: 1500,
-					temperature: 0.4
-				});
+			const completion = await this.openai.chat.completions.create({
+				model: 'gpt-4o',
+				messages: [
+					{ role: 'system', content: systemPrompt },
+					{ role: 'user', content: `Please provide current information about: ${question}` }
+				],
+				max_tokens: 1000,
+				temperature: 0.4
+			});
 
-				return completion.choices[0].message.content;
+			return completion.choices[0].message.content;
 				
 			} else if (documents.length > 0) {
 				// For document-based queries, use uploaded documents
@@ -407,7 +407,10 @@ IMPORTANT INSTRUCTIONS:
 
 		} catch (error) {
 			console.error('OpenAI API error:', error);
-			throw new Error('Failed to generate response');
+			if (error.code === 'rate_limit_exceeded') {
+				return 'I\'m currently experiencing high demand. Please try again in a moment with a shorter question.';
+			}
+			return 'Sorry, I encountered an error while processing your request. Please try again.';
 		}
 	}
 
@@ -499,6 +502,6 @@ server.listen(port, () => {
 	console.log(`🌐 Web server running on port ${port}`);
 	
 	// Start the Discord bot after web server is ready
-	const bot = new MentionBot();
-	bot.start().catch(console.error);
+const bot = new MentionBot();
+bot.start().catch(console.error); 
 }); 
