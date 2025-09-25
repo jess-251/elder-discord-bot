@@ -393,15 +393,15 @@ class MentionBot {
 			searchResults = `**Current Information (${currentDate}):**\n\n`;
 			
 			// Provide specific current context based on query (keep it concise)
-			const lowerQuery = query.toLowerCase();
+			const lowerQueryFallback = query.toLowerCase();
 			
-			if (lowerQuery.includes('ai') || lowerQuery.includes('artificial intelligence') || lowerQuery.includes('chatgpt') || lowerQuery.includes('openai')) {
+			if (lowerQueryFallback.includes('ai') || lowerQueryFallback.includes('artificial intelligence') || lowerQueryFallback.includes('chatgpt') || lowerQueryFallback.includes('openai')) {
 				searchResults += `🤖 **AI Developments (Current):** AI technology continues rapid advancement with new models, regulatory discussions, and widespread integration across industries. Recent trends include multimodal AI, improved reasoning capabilities, and integration into various sectors.`;
-			} else if (lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || lowerQuery.includes('ethereum') || lowerQuery.includes('bnb') || lowerQuery.includes('binance') || lowerQuery.includes('cryptocurrency') || lowerQuery.includes('blockchain') || lowerQuery.includes('defi') || lowerQuery.includes('nft')) {
+			} else if (lowerQueryFallback.includes('crypto') || lowerQueryFallback.includes('bitcoin') || lowerQueryFallback.includes('ethereum') || lowerQueryFallback.includes('bnb') || lowerQueryFallback.includes('binance') || lowerQueryFallback.includes('cryptocurrency') || lowerQueryFallback.includes('blockchain') || lowerQueryFallback.includes('defi') || lowerQueryFallback.includes('nft')) {
 				searchResults += `₿ **Cryptocurrency Updates (Current):** Cryptocurrency markets remain highly volatile with ongoing regulatory developments, institutional adoption, and technological innovations. Recent trends include DeFi protocols, NFT markets, and blockchain scalability solutions driving innovation.`;
-			} else if (lowerQuery.includes('stock') || lowerQuery.includes('market') || lowerQuery.includes('trading') || lowerQuery.includes('stocks') || lowerQuery.includes('investment') || lowerQuery.includes('finance') || lowerQuery.includes('economy') || lowerQuery.includes('price')) {
+			} else if (lowerQueryFallback.includes('stock') || lowerQueryFallback.includes('market') || lowerQueryFallback.includes('trading') || lowerQueryFallback.includes('stocks') || lowerQueryFallback.includes('investment') || lowerQueryFallback.includes('finance') || lowerQueryFallback.includes('economy') || lowerQueryFallback.includes('price')) {
 				searchResults += `📈 **Market Updates (Current):** Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies. Global economic conditions, geopolitical events, and interest rate changes significantly impact market performance.`;
-			} else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('breaking')) {
+			} else if (lowerQueryFallback.includes('news') || lowerQueryFallback.includes('latest') || lowerQueryFallback.includes('breaking')) {
 				searchResults += `📰 **Current News Context:** Global events continue to unfold across politics, technology, and economics with real-time coverage available. Breaking news develops rapidly and requires current monitoring through major news outlets and digital platforms.`;
 			} else {
 				searchResults += `📊 **Current Status:** This topic is actively evolving with ongoing developments requiring current monitoring. Information changes frequently and multiple sources provide real-time updates on this subject.`;
