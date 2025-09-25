@@ -284,36 +284,15 @@ class MentionBot {
 			const lowerQuery = query.toLowerCase();
 			
 			if (lowerQuery.includes('ai') || lowerQuery.includes('artificial intelligence') || lowerQuery.includes('chatgpt') || lowerQuery.includes('openai')) {
-				searchResults += `🤖 **AI Developments (Current):**\n`;
-				searchResults += `• AI technology continues rapid advancement with new models and capabilities being released regularly\n`;
-				searchResults += `• Major tech companies are integrating AI into their products and services\n`;
-				searchResults += `• Regulatory discussions around AI safety and ethics are ongoing globally\n`;
-				searchResults += `• AI tools are becoming more accessible and user-friendly\n\n`;
+				searchResults += `🤖 AI continues rapid advancement with new models, regulatory discussions, and widespread integration across industries.`;
 			} else if (lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || lowerQuery.includes('ethereum') || lowerQuery.includes('bnb') || lowerQuery.includes('binance')) {
-				searchResults += `₿ **Cryptocurrency Updates (Current - ${currentDate}):**\n`;
-				searchResults += `• **BNB (Binance Coin):** BNB continues to be one of the top cryptocurrencies by market cap, with its value tied to the Binance ecosystem and various utility functions including trading fee discounts and DeFi applications\n`;
-				searchResults += `• **Market Status:** Cryptocurrency markets remain highly volatile with daily price fluctuations influenced by regulatory news, institutional adoption, and technological developments\n`;
-				searchResults += `• **Recent Trends:** DeFi protocols, NFT markets, and blockchain scalability solutions continue to drive innovation in the crypto space\n`;
-				searchResults += `• **Regulatory Environment:** Governments worldwide continue to develop frameworks for cryptocurrency regulation, affecting market sentiment and adoption\n`;
-				searchResults += `• **Institutional Activity:** Major corporations and financial institutions are increasingly integrating cryptocurrency into their operations and investment strategies\n\n`;
+				searchResults += `₿ Cryptocurrency markets remain volatile with ongoing regulatory developments, institutional adoption, and technological innovations.`;
 			} else if (lowerQuery.includes('stock') || lowerQuery.includes('market') || lowerQuery.includes('trading')) {
-				searchResults += `📈 **Market Updates (Current):**\n`;
-				searchResults += `• Stock markets continue to be influenced by economic indicators and corporate earnings\n`;
-				searchResults += `• Global economic conditions affect market performance\n`;
-				searchResults += `• Central bank policies and interest rates impact market trends\n`;
-				searchResults += `• Technology and energy sectors remain active areas of investment\n\n`;
+				searchResults += `📈 Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies.`;
 			} else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('breaking')) {
-				searchResults += `📰 **Current News Context:**\n`;
-				searchResults += `• Global events continue to unfold across politics, technology, and economics\n`;
-				searchResults += `• Breaking news develops rapidly and requires real-time monitoring\n`;
-				searchResults += `• Major news outlets provide up-to-the-minute coverage of current events\n`;
-				searchResults += `• Social media and digital platforms offer immediate news updates\n\n`;
+				searchResults += `📰 Global events continue to unfold across politics, technology, and economics with real-time coverage available.`;
 			} else {
-				searchResults += `📊 **Current Status:**\n`;
-				searchResults += `• This topic is actively evolving with ongoing developments\n`;
-				searchResults += `• Information changes frequently and requires current monitoring\n`;
-				searchResults += `• Multiple sources provide real-time updates on this subject\n`;
-				searchResults += `• Official channels and news outlets offer the most current information\n\n`;
+				searchResults += `📊 This topic is actively evolving with ongoing developments requiring current monitoring.`;
 			}
 			
 			searchResults += `💡 **Note:** For the most up-to-date information, I recommend checking recent news sources, official websites, or real-time data feeds.`;
@@ -339,20 +318,12 @@ class MentionBot {
 				// For real-time queries, get current information and provide it directly
 				const searchResults = await this.performWebSearch(question);
 				
-				// Create a more direct system prompt for real-time queries
-				const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking for real-time/current information about: "${question}"
+				// Create a concise system prompt for real-time queries
+				const systemPrompt = `You are a helpful AI assistant. The user is asking about: "${question}"
 
-Here is the current information I found:
-${searchResults}
+Current information: ${searchResults}
 
-IMPORTANT INSTRUCTIONS:
-1. Provide the current information directly from the search results above
-2. Do NOT say you don't have access to real-time information
-3. Do NOT tell the user to check other sources
-4. Give them the actual current information they're asking for
-5. Be informative and helpful
-6. If the search results contain specific details, use them
-7. Format your response clearly with current information`;
+Provide current information directly. Be helpful and informative.`;
 
 			const completion = await this.openai.chat.completions.create({
 				model: 'gpt-4o',
@@ -360,7 +331,7 @@ IMPORTANT INSTRUCTIONS:
 					{ role: 'system', content: systemPrompt },
 					{ role: 'user', content: `Please provide current information about: ${question}` }
 				],
-				max_tokens: 1000,
+				max_tokens: 500,
 				temperature: 0.4
 			});
 
