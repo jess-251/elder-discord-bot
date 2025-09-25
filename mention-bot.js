@@ -228,8 +228,11 @@ class MentionBot {
 		const realTimeKeywords = [
 			'latest', 'current', 'recent', 'today', 'now', 'breaking', 'news',
 			'what\'s happening', 'what is happening', 'update', 'updates',
-			'stock price', 'crypto', 'bitcoin', 'weather', 'forecast',
-			'live', 'real-time', 'right now', 'this week', 'this month'
+			'stock price', 'crypto', 'bitcoin', 'ethereum', 'bnb', 'binance',
+			'weather', 'forecast', 'live', 'real-time', 'right now', 
+			'this week', 'this month', 'market', 'trading', 'price',
+			'cryptocurrency', 'crypto', 'blockchain', 'defi', 'nft',
+			'stocks', 'trading', 'investment', 'finance', 'economy'
 		];
 		
 		const lowerQuestion = question.toLowerCase();
@@ -285,9 +288,9 @@ class MentionBot {
 			
 			if (lowerQuery.includes('ai') || lowerQuery.includes('artificial intelligence') || lowerQuery.includes('chatgpt') || lowerQuery.includes('openai')) {
 				searchResults += `🤖 AI continues rapid advancement with new models, regulatory discussions, and widespread integration across industries.`;
-			} else if (lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || lowerQuery.includes('ethereum') || lowerQuery.includes('bnb') || lowerQuery.includes('binance')) {
+			} else if (lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || lowerQuery.includes('ethereum') || lowerQuery.includes('bnb') || lowerQuery.includes('binance') || lowerQuery.includes('cryptocurrency') || lowerQuery.includes('blockchain') || lowerQuery.includes('defi') || lowerQuery.includes('nft')) {
 				searchResults += `₿ Cryptocurrency markets remain volatile with ongoing regulatory developments, institutional adoption, and technological innovations.`;
-			} else if (lowerQuery.includes('stock') || lowerQuery.includes('market') || lowerQuery.includes('trading')) {
+			} else if (lowerQuery.includes('stock') || lowerQuery.includes('market') || lowerQuery.includes('trading') || lowerQuery.includes('stocks') || lowerQuery.includes('investment') || lowerQuery.includes('finance') || lowerQuery.includes('economy') || lowerQuery.includes('price')) {
 				searchResults += `📈 Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies.`;
 			} else if (lowerQuery.includes('news') || lowerQuery.includes('latest') || lowerQuery.includes('breaking')) {
 				searchResults += `📰 Global events continue to unfold across politics, technology, and economics with real-time coverage available.`;
