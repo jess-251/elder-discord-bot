@@ -93,11 +93,6 @@ class MentionBot {
 			if (message.mentions.users.has(this.client.user.id)) {
 				await this.handleMention(message);
 			}
-
-			// Handle file uploads for document feeding
-			if (message.attachments.size > 0) {
-				await this.handleFileUpload(message);
-			}
 		});
 
 		this.client.on('error', (error) => {
