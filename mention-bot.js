@@ -363,6 +363,31 @@ class MentionBot {
 				console.log('❌ DuckDuckGo search failed:', ddgError.message);
 			}
 			
+			// Try alternative search methods for real data
+			try {
+				// Try a different search approach
+				const alternativeSearchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1&t=discord-bot`;
+				const altResponse = await fetch(alternativeSearchUrl);
+				const altData = await altResponse.json();
+				
+				if (altData.Abstract) {
+					searchResults = `**🔍 Real-Time Search Results:**\n\n${altData.Abstract}\n\n`;
+					if (altData.RelatedTopics && altData.RelatedTopics.length > 0) {
+						searchResults += '**📰 Related Information:**\n';
+						altData.RelatedTopics.slice(0, 2).forEach((topic, index) => {
+							if (topic.Text) {
+								searchResults += `${index + 1}. ${topic.Text}\n`;
+							}
+						});
+					}
+					searchResults += `\n*Source: DuckDuckGo - ${new Date().toLocaleString()}*`;
+					console.log('✅ Alternative search successful');
+					return searchResults;
+				}
+			} catch (altError) {
+				console.log('❌ Alternative search failed:', altError.message);
+			}
+			
 			// Enhanced fallback with current context (limited to prevent token overflow)
 			const currentDate = new Date().toLocaleDateString();
 			searchResults = `**Current Information (${currentDate}):**\n\n`;
@@ -425,7 +450,12 @@ class MentionBot {
 
 Current information: ${searchResults}
 
-IMPORTANT: Use the current information above to provide a detailed, informative response. Be specific about recent developments, trends, and current status. Don't just give generic responses - use the actual information provided.`;
+CRITICAL INSTRUCTIONS:
+1. Use the EXACT information provided above - don't make up generic responses
+2. If you have real search results, use them directly
+3. If you have financial data, show the actual numbers and prices
+4. Be specific and factual - don't give vague responses
+5. Quote the information you found when possible`;
 
 				const completion = await this.openai.chat.completions.create({
 					model: 'gpt-4o',
