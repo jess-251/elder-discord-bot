@@ -1,7 +1,7 @@
 {
   "name": "discord-log-analysis-bot",
   "version": "1.0.0",
-  "description": "A smart Discord bot that analyzes log files, provides intelligent troubleshooting, and maintains a growing knowledge base of solutions",
+  "description": "🥷 Elder Discord Bot with real-time AI capabilities and document management",
   "main": "log.js",
   "scripts": {
     "start": "node log.js",
