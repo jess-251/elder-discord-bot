@@ -240,12 +240,96 @@ class MentionBot {
 	}
 
 	/**
+	 * Get real-time financial data
+	 */
+	async getFinancialData(query) {
+		try {
+			console.log('💰 Fetching financial data for:', query);
+			
+			// Try CoinGecko API for crypto data
+			if (query.toLowerCase().includes('crypto') || query.toLowerCase().includes('bitcoin') || 
+				query.toLowerCase().includes('ethereum') || query.toLowerCase().includes('$')) {
+				
+				// Check if user is asking about a specific token (like $XPL)
+				const tokenMatch = query.match(/\$([A-Z]+)/);
+				if (tokenMatch) {
+					const tokenSymbol = tokenMatch[1].toLowerCase();
+					try {
+						// Try to get specific token data
+						const specificUrl = `https://api.coingecko.com/api/v3/coins/${tokenSymbol}`;
+						const specificResponse = await fetch(specificUrl);
+						const specificData = await specificResponse.json();
+						
+						if (specificData && specificData.market_data) {
+							const marketData = specificData.market_data;
+							let tokenInfo = `**💰 ${specificData.name} (${specificData.symbol.toUpperCase()}) - Live Data:**\n\n`;
+							tokenInfo += `💵 **Current Price:** $${marketData.current_price?.usd?.toLocaleString() || 'N/A'}\n`;
+							tokenInfo += `📊 **Market Cap:** $${marketData.market_cap?.usd?.toLocaleString() || 'N/A'}\n`;
+							tokenInfo += `📈 **24h Change:** ${marketData.price_change_percentage_24h?.toFixed(2) || 'N/A'}%\n`;
+							tokenInfo += `🔄 **24h Volume:** $${marketData.total_volume?.usd?.toLocaleString() || 'N/A'}\n`;
+							tokenInfo += `\n*Data from CoinGecko API - Updated: ${new Date().toLocaleString()}*`;
+							return tokenInfo;
+						}
+					} catch (specificError) {
+						console.log('❌ Specific token fetch failed:', specificError.message);
+					}
+				}
+				
+				// Fallback to top cryptocurrencies
+				const coinGeckoUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false';
+				const response = await fetch(coinGeckoUrl);
+				const data = await response.json();
+				
+				if (data && data.length > 0) {
+					let financialInfo = '**📊 Current Cryptocurrency Market Data:**\n\n';
+					
+					// Get top 5 cryptocurrencies
+					data.slice(0, 5).forEach((coin, index) => {
+						const change24h = coin.price_change_percentage_24h || 0;
+						const changeEmoji = change24h >= 0 ? '📈' : '📉';
+						financialInfo += `${index + 1}. **${coin.name} (${coin.symbol.toUpperCase()})**\n`;
+						financialInfo += `   💵 Price: $${coin.current_price?.toLocaleString() || 'N/A'}\n`;
+						financialInfo += `   📊 Market Cap: $${coin.market_cap?.toLocaleString() || 'N/A'}\n`;
+						financialInfo += `   ${changeEmoji} 24h Change: ${change24h.toFixed(2)}%\n\n`;
+					});
+					
+					financialInfo += `*Data from CoinGecko API - Updated: ${new Date().toLocaleString()}*\n`;
+					financialInfo += `💡 **Note:** For specific token data like $XPL, check CoinGecko or CoinMarketCap directly.`;
+					
+					return financialInfo;
+				}
+			}
+			
+			return null;
+		} catch (error) {
+			console.log('❌ Financial data fetch failed:', error.message);
+			return null;
+		}
+	}
+
+	/**
 	 * Perform web search for real-time information
 	 */
 	async performWebSearch(query) {
 		try {
 			console.log(`🔍 Searching for real-time info: ${query}`);
 			let searchResults = '';
+			
+			// Check if this is a financial query and try to get real data first
+			const lowerQuery = query.toLowerCase();
+			const isFinancialQuery = lowerQuery.includes('price') || lowerQuery.includes('market cap') || 
+									lowerQuery.includes('mc') || lowerQuery.includes('fdv') || 
+									lowerQuery.includes('crypto') || lowerQuery.includes('bitcoin') || 
+									lowerQuery.includes('ethereum') || lowerQuery.includes('$') ||
+									lowerQuery.includes('trading') || lowerQuery.includes('stock');
+			
+			if (isFinancialQuery) {
+				const financialData = await this.getFinancialData(query);
+				if (financialData) {
+					console.log('✅ Financial data retrieved successfully');
+					return financialData;
+				}
+			}
 			
 			// Try DuckDuckGo Instant Answer API first
 			try {
