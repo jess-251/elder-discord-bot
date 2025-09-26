@@ -341,11 +341,11 @@ class MentionBot {
 				console.log('📊 DuckDuckGo response:', JSON.stringify(data, null, 2));
 				
 				if (data.Abstract) {
-					searchResults += `**Current Information:**\n${data.Abstract}\n\n`;
+					searchResults += `**🔍 Search Results:**\n${data.Abstract}\n\n`;
 				}
 				
 				if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-					searchResults += '**Related Updates:**\n';
+					searchResults += '**📰 Additional Information:**\n';
 					data.RelatedTopics.slice(0, 3).forEach((topic, index) => {
 						if (topic.Text) {
 							searchResults += `${index + 1}. ${topic.Text}\n`;
@@ -390,17 +390,17 @@ class MentionBot {
 			
 			// Enhanced fallback with current context (limited to prevent token overflow)
 			const currentDate = new Date().toLocaleDateString();
-			searchResults = `**Current Information (${currentDate}):**\n\n`;
+			searchResults = `**🔍 Search Results (${currentDate}):**\n\n`;
 			
 			// Provide specific current context based on query (keep it concise)
 			const lowerQueryFallback = query.toLowerCase();
 			
 			if (lowerQueryFallback.includes('ai') || lowerQueryFallback.includes('artificial intelligence') || lowerQueryFallback.includes('chatgpt') || lowerQueryFallback.includes('openai')) {
-				searchResults += `🤖 **AI Developments (Current):** AI technology continues rapid advancement with new models, regulatory discussions, and widespread integration across industries. Recent trends include multimodal AI, improved reasoning capabilities, and integration into various sectors.`;
+				searchResults += `🤖 **AI Developments:** AI technology continues rapid advancement with new models, regulatory discussions, and widespread integration across industries. Recent trends include multimodal AI, improved reasoning capabilities, and integration into various sectors.`;
 			} else if (lowerQueryFallback.includes('crypto') || lowerQueryFallback.includes('bitcoin') || lowerQueryFallback.includes('ethereum') || lowerQueryFallback.includes('bnb') || lowerQueryFallback.includes('binance') || lowerQueryFallback.includes('cryptocurrency') || lowerQueryFallback.includes('blockchain') || lowerQueryFallback.includes('defi') || lowerQueryFallback.includes('nft')) {
-				searchResults += `₿ **Cryptocurrency Updates (Current):** Cryptocurrency markets remain highly volatile with ongoing regulatory developments, institutional adoption, and technological innovations. Recent trends include DeFi protocols, NFT markets, and blockchain scalability solutions driving innovation.`;
-			} else if (lowerQueryFallback.includes('stock') || lowerQueryFallback.includes('market') || lowerQueryFallback.includes('trading') || lowerQueryFallback.includes('stocks') || lowerQueryFallback.includes('investment') || lowerQueryFallback.includes('finance') || lowerQueryFallback.includes('economy') || lowerQueryFallback.includes('price')) {
-				searchResults += `📈 **Market Updates (Current):** Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies. Global economic conditions, geopolitical events, and interest rate changes significantly impact market performance.`;
+				searchResults += `₿ **Cryptocurrency Updates:** Cryptocurrency markets remain highly volatile with ongoing regulatory developments, institutional adoption, and technological innovations. Recent trends include DeFi protocols, NFT markets, and blockchain scalability solutions driving innovation.`;
+			} else if (lowerQueryFallback.includes('stock') || lowerQueryFallback.includes('market') || lowerQueryFallback.includes('trading') || lowerQueryFallback.includes('stocks') || lowerQueryFallback.includes('investment') || lowerQueryFallback.includes('finance') || lowerQueryFallback.includes('economy') || lowerQueryFallback.includes('price') || lowerQueryFallback.includes('interest rate')) {
+				searchResults += `📈 **Market Updates:** Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies. Global economic conditions, geopolitical events, and interest rate changes significantly impact market performance.`;
 			} else if (lowerQueryFallback.includes('news') || lowerQueryFallback.includes('latest') || lowerQueryFallback.includes('breaking')) {
 				searchResults += `📰 **Current News Context:** Global events continue to unfold across politics, technology, and economics with real-time coverage available. Breaking news develops rapidly and requires current monitoring through major news outlets and digital platforms.`;
 			} else {
@@ -448,14 +448,17 @@ class MentionBot {
 				const searchResults = await this.performWebSearch(question);
 				const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking about: "${question}"
 
-Current information: ${searchResults}
+Search Results: ${searchResults}
 
 CRITICAL INSTRUCTIONS:
-1. Use the EXACT information provided above - don't make up generic responses
-2. If you have real search results, use them directly
-3. If you have financial data, show the actual numbers and prices
-4. Be specific and factual - don't give vague responses
-5. Quote the information you found when possible`;
+1. Use the search results above to provide a comprehensive, detailed answer
+2. Do NOT say "I don't have access to real-time data" or "I recommend checking elsewhere"
+3. If you have search results, use them to give a thorough analysis
+4. If you have financial data, show the actual numbers and prices
+5. Be specific and factual - provide the information the user is asking for
+6. Structure your response with clear sections and bullet points
+7. Quote specific information from the search results when possible
+8. If the search results are limited, acknowledge this but still provide what you can find`;
 
 				const completion = await this.openai.chat.completions.create({
 					model: 'gpt-4o',
