@@ -466,7 +466,7 @@ CRITICAL INSTRUCTIONS:
 						{ role: 'system', content: systemPrompt },
 						{ role: 'user', content: `Please provide current information about: ${question}` }
 					],
-					max_tokens: 1000,
+					max_tokens: 500,
 					temperature: 0.4
 				});
 
