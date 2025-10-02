@@ -442,7 +442,8 @@ class MentionBot {
 					temperature: 0.4
 				});
 
-				return completion.choices[0].message.content;
+				const response = completion.choices[0].message.content;
+				return this.truncateToCharacterLimit(response, 500);
 			} else {
 				// For general queries without documents, do web search
 				const searchResults = await this.performWebSearch(question);
@@ -466,11 +467,12 @@ CRITICAL INSTRUCTIONS:
 						{ role: 'system', content: systemPrompt },
 						{ role: 'user', content: `Please provide current information about: ${question}` }
 					],
-					max_tokens: 500,
+					max_tokens: 1000,
 					temperature: 0.4
 				});
 
-				return completion.choices[0].message.content;
+				const response = completion.choices[0].message.content;
+				return this.truncateToCharacterLimit(response, 500);
 			}
 
 		} catch (error) {
@@ -480,6 +482,37 @@ CRITICAL INSTRUCTIONS:
 			}
 			return 'Sorry, I encountered an error while processing your request. Please try again.';
 		}
+	}
+
+	/**
+	 * Truncate text to character limit while respecting sentence boundaries
+	 */
+	truncateToCharacterLimit(text, limit) {
+		if (text.length <= limit) {
+			return text;
+		}
+
+		// Find the last complete sentence within the limit
+		const truncated = text.substring(0, limit);
+		const lastSentenceEnd = Math.max(
+			truncated.lastIndexOf('.'),
+			truncated.lastIndexOf('!'),
+			truncated.lastIndexOf('?')
+		);
+
+		// If we found a sentence ending, truncate there
+		if (lastSentenceEnd > limit * 0.5) { // Only if we're not cutting off too much
+			return truncated.substring(0, lastSentenceEnd + 1);
+		}
+
+		// Otherwise, find the last word boundary
+		const lastSpace = truncated.lastIndexOf(' ');
+		if (lastSpace > limit * 0.7) { // Only if we're not cutting off too much
+			return truncated.substring(0, lastSpace) + '...';
+		}
+
+		// If all else fails, truncate at the limit and add ellipsis
+		return truncated + '...';
 	}
 
 	/**
