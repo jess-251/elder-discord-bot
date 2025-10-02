@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, AttachmentBuilder, ChannelType } = require('discord.js');
 const OpenAI = require('openai');
 const fs = require('fs').promises;
 const path = require('path');
@@ -92,7 +92,15 @@ class MentionBot {
 			if (message.author.bot) return;
 
 			// Handle DMs (Direct Messages)
-			if (message.channel.type === 1) { // DM channel type
+			if (message.channel.type === ChannelType.DM) { // DM channel type
+				console.log('📨 DM received from:', message.author.username);
+				await this.handleDM(message);
+				return;
+			}
+
+			// Fallback: Check if it's a DM by checking if channel has no guild
+			if (!message.guild) {
+				console.log('📨 DM detected (fallback) from:', message.author.username);
 				await this.handleDM(message);
 				return;
 			}
@@ -192,6 +200,7 @@ class MentionBot {
 	 */
 	async handleDM(message) {
 		try {
+			console.log('🔍 Processing DM:', message.content);
 			const label = this.parseLabel(message.content);
 			const question = this.cleanQuestion(message.content, this.client.user.id);
 			
