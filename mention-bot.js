@@ -88,25 +88,30 @@ class MentionBot {
 		});
 
 		this.client.on('messageCreate', async (message) => {
+			// Debug: Log all messages
+			console.log(`📝 Message received: "${message.content}" from ${message.author.username} in channel type: ${message.channel.type}, guild: ${message.guild ? message.guild.name : 'None'}`);
+			
 			// Ignore messages from bots
-			if (message.author.bot) return;
-
-			// Handle DMs (Direct Messages)
-			if (message.channel.type === ChannelType.DM) { // DM channel type
-				console.log('📨 DM received from:', message.author.username);
-				await this.handleDM(message);
+			if (message.author.bot) {
+				console.log('🤖 Ignoring bot message');
 				return;
 			}
 
-			// Fallback: Check if it's a DM by checking if channel has no guild
-			if (!message.guild) {
-				console.log('📨 DM detected (fallback) from:', message.author.username);
+			// Handle DMs (Direct Messages) - Multiple detection methods
+			const isDM = message.channel.type === ChannelType.DM || 
+						message.channel.type === 1 || 
+						!message.guild ||
+						message.channel.type === 'DM';
+			
+			if (isDM) {
+				console.log('📨 DM detected! Processing...');
 				await this.handleDM(message);
 				return;
 			}
 
 			// Check if bot is mentioned in guild channels
 			if (message.mentions.users.has(this.client.user.id)) {
+				console.log('👋 Mention detected in guild channel');
 				await this.handleMention(message);
 			}
 		});
@@ -201,6 +206,24 @@ class MentionBot {
 	async handleDM(message) {
 		try {
 			console.log('🔍 Processing DM:', message.content);
+			
+			// Simple test response first
+			if (message.content.toLowerCase() === 'test' || message.content.toLowerCase() === 'hello') {
+				try {
+					await message.reply('✅ DM working! Bot is responding to your direct message.');
+					console.log('✅ Successfully sent DM response');
+				} catch (error) {
+					console.error('❌ Failed to send DM response:', error);
+					// Try sending a regular message instead
+					try {
+						await message.channel.send('✅ DM working! Bot is responding to your direct message.');
+					} catch (sendError) {
+						console.error('❌ Failed to send message to DM channel:', sendError);
+					}
+				}
+				return;
+			}
+			
 			const label = this.parseLabel(message.content);
 			const question = this.cleanQuestion(message.content, this.client.user.id);
 			
