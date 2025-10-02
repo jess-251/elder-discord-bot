@@ -17,7 +17,8 @@ class MentionBot {
 				GatewayIntentBits.Guilds,
 				GatewayIntentBits.GuildMessages,
 				GatewayIntentBits.MessageContent,
-				GatewayIntentBits.GuildMessageReactions
+				GatewayIntentBits.GuildMessageReactions,
+				GatewayIntentBits.DirectMessages
 			]
 		});
 
@@ -80,6 +81,7 @@ class MentionBot {
 		this.client.on('ready', () => {
 			console.log(`✅ Bot logged in as ${this.client.user.tag}`);
 			console.log(`🤖 Mention me with @${this.client.user.username} to ask questions!`);
+			console.log(`💬 Or DM me directly for private conversations!`);
 			console.log('💾 To save files under a memory label: attach files and write "remember as <label>"');
 			console.log('🔎 To query a memory label: "@Bot using <label> <your question>"');
 			console.log('🌐 Ask for real-time info: "@Bot what\'s the latest on [topic]" or "@Bot current news about [topic]"');
@@ -89,7 +91,13 @@ class MentionBot {
 			// Ignore messages from bots
 			if (message.author.bot) return;
 
-			// Check if bot is mentioned
+			// Handle DMs (Direct Messages)
+			if (message.channel.type === 1) { // DM channel type
+				await this.handleDM(message);
+				return;
+			}
+
+			// Check if bot is mentioned in guild channels
 			if (message.mentions.users.has(this.client.user.id)) {
 				await this.handleMention(message);
 			}
@@ -175,6 +183,62 @@ class MentionBot {
 
 		} catch (error) {
 			console.error('Error handling mention:', error);
+			await message.reply('❌ Sorry, I encountered an error while processing your request.');
+		}
+	}
+
+	/**
+	 * Handle Direct Messages to the bot
+	 */
+	async handleDM(message) {
+		try {
+			const label = this.parseLabel(message.content);
+			const question = this.cleanQuestion(message.content, this.client.user.id);
+			
+			if (!question && message.attachments.size === 0) {
+				await message.reply('👋 Hi! You can ask me questions directly here, or attach files and say "remember as <label>". To query a label, say "using <label> <question>". For real-time info, ask "what\'s the latest on [topic]" or "current news about [topic]".');
+				return;
+			}
+
+			// If the DM includes attachments and a "remember as <label>", handle saving
+			if (message.attachments.size > 0 && /remember\s+as\s+/i.test(message.content)) {
+				if (!label) {
+					await message.reply('❌ Please provide a label like: remember as project_docs');
+					return;
+				}
+				await this.handleFileUpload(message, label);
+				return;
+			}
+
+			// Show typing indicator
+			await message.channel.sendTyping();
+
+			// Only get documents if user is asking to use a specific label
+			let documents = [];
+			if (label) {
+				// User is asking to use a specific memory label
+				documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+			}
+			// If no label specified, don't load any documents - just do web search
+			
+			// Generate response using AI
+			const response = await this.generateResponse(question, documents, message.channel.id, label);
+			
+			// Save conversation to database
+			await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
+
+			// Send response
+			const embed = new EmbedBuilder()
+				.setColor('#0099ff')
+				.setTitle('🥷 Elder')
+				.setDescription(response)
+				.setFooter({ text: `Asked by ${message.author.username}${label ? ` • using ${label}` : ''}` })
+				.setTimestamp();
+
+			await message.reply({ embeds: [embed] });
+
+		} catch (error) {
+			console.error('Error handling DM:', error);
 			await message.reply('❌ Sorry, I encountered an error while processing your request.');
 		}
 	}
