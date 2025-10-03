@@ -121,13 +121,8 @@ class UnifiedBot {
                 return;
             }
 
-            // Handle DMs (Direct Messages) - Multiple detection methods
-            const isDM = message.channel.type === ChannelType.DM || 
-                        message.channel.type === 1 || 
-                        !message.guild ||
-                        message.channel.type === 'DM';
-            
-            if (isDM) {
+            // Handle DMs (Direct Messages) - Simplified detection
+            if (message.channel.type === ChannelType.DM) {
                 console.log('📨 DM detected! Processing...');
                 await this.handleDM(message);
                 return;
@@ -473,18 +468,8 @@ class UnifiedBot {
             
             // Simple test response first
             if (message.content.toLowerCase() === 'test' || message.content.toLowerCase() === 'hello') {
-                try {
-                    await message.reply('✅ DM working! Bot is responding to your direct message.');
-                    console.log('✅ Successfully sent DM response');
-                } catch (error) {
-                    console.error('❌ Failed to send DM response:', error);
-                    // Try sending a regular message instead
-                    try {
-                        await message.channel.send('✅ DM working! Bot is responding to your direct message.');
-                    } catch (sendError) {
-                        console.error('❌ Failed to send message to DM channel:', sendError);
-                    }
-                }
+                await message.reply('✅ DM working! Bot is responding to your direct message.');
+                console.log('✅ Successfully sent DM response');
                 return;
             }
             
