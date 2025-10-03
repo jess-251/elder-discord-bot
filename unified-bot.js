@@ -121,8 +121,12 @@ class UnifiedBot {
                 return;
             }
 
-            // Handle DMs (Direct Messages) - Simplified detection
-            if (message.channel.type === ChannelType.DM) {
+            // Enhanced DM detection with multiple checks
+            const isDM = message.channel.type === ChannelType.DM || 
+                        message.channel.type === 1 || 
+                        !message.guild;
+            
+            if (isDM) {
                 console.log('📨 DM detected! Processing...');
                 await this.handleDM(message);
                 return;
