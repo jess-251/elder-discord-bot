@@ -128,6 +128,9 @@ class UnifiedBot {
                 return;
             }
 
+            // Debug: Log channel type for troubleshooting
+            console.log(`🔍 Channel type: ${message.channel.type}, ChannelType.DM: ${ChannelType.DM}`);
+
             // Check if bot is mentioned in guild channels
             if (message.mentions.users.has(this.client.user.id)) {
                 console.log('👋 Mention detected in guild channel');
@@ -788,7 +791,7 @@ class UnifiedBot {
                 });
 
                 const response = completion.choices[0].message.content;
-                return this.truncateToCharacterLimit(response, 500);
+                return this.truncateToCharacterLimit(response, 2000);
             } else {
                 // For general queries without documents, do web search
                 const searchResults = await this.performWebSearch(question);
@@ -817,7 +820,7 @@ CRITICAL INSTRUCTIONS:
                 });
 
                 const response = completion.choices[0].message.content;
-                return this.truncateToCharacterLimit(response, 500);
+                return this.truncateToCharacterLimit(response, 2000);
             }
 
         } catch (error) {
