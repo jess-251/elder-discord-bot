@@ -174,32 +174,45 @@ class MentionBot {
 			// Show typing indicator
 			await message.channel.sendTyping();
 
-			// Only get documents if user is asking to use a specific label
-			let documents = [];
-			if (label) {
-				// User is asking to use a specific memory label
-				documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
-			}
-			// If no label specified, don't load any documents - just do web search
-			
-			// Generate response using AI
-			const response = await this.generateResponse(question, documents, message.channel.id, label);
-			
-			// Save conversation to database
-			await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
+		// Only get documents if user is asking to use a specific label
+		let documents = [];
+		if (label) {
+			// User is asking to use a specific memory label
+			documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+		}
+		// If no label specified, don't load any documents - just do web search
+		
+		// Generate response using AI
+		const response = await this.generateResponse(question, documents, message.channel.id, label);
+		
+		// Save conversation to database
+		await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
 
-			// Send response
-			const embed = new EmbedBuilder()
+		// Split response into chunks if needed (Discord embed limit is 4096 chars)
+		const chunks = this.splitIntoEmbedChunks(response);
+		
+		// Send first chunk as reply
+		const firstEmbed = new EmbedBuilder()
+			.setColor('#0099ff')
+			.setTitle('🥷 Elder')
+			.setDescription(chunks[0])
+			.setFooter({ text: `Asked by ${message.author.username}${label ? ` • using ${label}` : ''}${chunks.length > 1 ? ` • Part 1/${chunks.length}` : ''}` })
+			.setTimestamp();
+
+		await message.reply({ embeds: [firstEmbed] });
+
+		// Send remaining chunks as follow-up messages
+		for (let i = 1; i < chunks.length; i++) {
+			const followUpEmbed = new EmbedBuilder()
 				.setColor('#0099ff')
-				.setTitle('🥷 Elder')
-				.setDescription(response)
-				.setFooter({ text: `Asked by ${message.author.username}${label ? ` • using ${label}` : ''}` })
-				.setTimestamp();
+				.setDescription(chunks[i])
+				.setFooter({ text: `Part ${i + 1}/${chunks.length}` });
+			
+			await message.channel.send({ embeds: [followUpEmbed] });
+		}
 
-			await message.reply({ embeds: [embed] });
-
-		} catch (error) {
-			console.error('Error handling mention:', error);
+	} catch (error) {
+		console.error('Error handling mention:', error);
 			await message.reply('❌ Sorry, I encountered an error while processing your request.');
 		}
 	}
@@ -249,32 +262,45 @@ class MentionBot {
 			// Show typing indicator
 			await message.channel.sendTyping();
 
-			// Only get documents if user is asking to use a specific label
-			let documents = [];
-			if (label) {
-				// User is asking to use a specific memory label
-				documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
-			}
-			// If no label specified, don't load any documents - just do web search
-			
-			// Generate response using AI
-			const response = await this.generateResponse(question, documents, message.channel.id, label);
-			
-			// Save conversation to database
-			await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
+		// Only get documents if user is asking to use a specific label
+		let documents = [];
+		if (label) {
+			// User is asking to use a specific memory label
+			documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+		}
+		// If no label specified, don't load any documents - just do web search
+		
+		// Generate response using AI
+		const response = await this.generateResponse(question, documents, message.channel.id, label);
+		
+		// Save conversation to database
+		await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
 
-			// Send response
-			const embed = new EmbedBuilder()
+		// Split response into chunks if needed (Discord embed limit is 4096 chars)
+		const chunks = this.splitIntoEmbedChunks(response);
+		
+		// Send first chunk as reply
+		const firstEmbed = new EmbedBuilder()
+			.setColor('#0099ff')
+			.setTitle('🥷 Elder')
+			.setDescription(chunks[0])
+			.setFooter({ text: `Asked by ${message.author.username}${label ? ` • using ${label}` : ''}${chunks.length > 1 ? ` • Part 1/${chunks.length}` : ''}` })
+			.setTimestamp();
+
+		await message.reply({ embeds: [firstEmbed] });
+
+		// Send remaining chunks as follow-up messages
+		for (let i = 1; i < chunks.length; i++) {
+			const followUpEmbed = new EmbedBuilder()
 				.setColor('#0099ff')
-				.setTitle('🥷 Elder')
-				.setDescription(response)
-				.setFooter({ text: `Asked by ${message.author.username}${label ? ` • using ${label}` : ''}` })
-				.setTimestamp();
+				.setDescription(chunks[i])
+				.setFooter({ text: `Part ${i + 1}/${chunks.length}` });
+			
+			await message.channel.send({ embeds: [followUpEmbed] });
+		}
 
-			await message.reply({ embeds: [embed] });
-
-		} catch (error) {
-			console.error('Error handling DM:', error);
+	} catch (error) {
+		console.error('Error handling DM:', error);
 			await message.reply('❌ Sorry, I encountered an error while processing your request.');
 		}
 	}
@@ -542,12 +568,12 @@ class MentionBot {
 					temperature: 0.4
 				});
 
-				const response = completion.choices[0].message.content;
-				return this.truncateToCharacterLimit(response, 500);
-			} else {
-				// For general queries without documents, do web search
-				const searchResults = await this.performWebSearch(question);
-				const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking about: "${question}"
+			const response = completion.choices[0].message.content;
+			return this.truncateToCharacterLimit(response, 2000);
+		} else {
+			// For general queries without documents, do web search
+			const searchResults = await this.performWebSearch(question);
+			const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking about: "${question}"
 
 Search Results: ${searchResults}
 
@@ -561,18 +587,18 @@ CRITICAL INSTRUCTIONS:
 7. Quote specific information from the search results when possible
 8. If the search results are limited, acknowledge this but still provide what you can find`;
 
-				const completion = await this.openai.chat.completions.create({
-					model: 'gpt-4o',
-					messages: [
-						{ role: 'system', content: systemPrompt },
-						{ role: 'user', content: `Please provide current information about: ${question}` }
-					],
-					max_tokens: 1000,
-					temperature: 0.4
-				});
+			const completion = await this.openai.chat.completions.create({
+				model: 'gpt-4o',
+				messages: [
+					{ role: 'system', content: systemPrompt },
+					{ role: 'user', content: `Please provide current information about: ${question}` }
+				],
+				max_tokens: 1000,
+				temperature: 0.4
+			});
 
-				const response = completion.choices[0].message.content;
-				return this.truncateToCharacterLimit(response, 500);
+			const response = completion.choices[0].message.content;
+			return this.truncateToCharacterLimit(response, 2000);
 			}
 
 		} catch (error) {
@@ -613,6 +639,56 @@ CRITICAL INSTRUCTIONS:
 
 		// If all else fails, truncate at the limit and add ellipsis
 		return truncated + '...';
+	}
+
+	/**
+	 * Split long text into chunks that fit in Discord embeds (max 4096 chars per embed description)
+	 */
+	splitIntoEmbedChunks(text, maxLength = 4000) {
+		if (text.length <= maxLength) {
+			return [text];
+		}
+
+		const chunks = [];
+		let remaining = text;
+
+		while (remaining.length > 0) {
+			if (remaining.length <= maxLength) {
+				chunks.push(remaining);
+				break;
+			}
+
+			// Find a good break point (sentence or paragraph)
+			let breakPoint = maxLength;
+			const substring = remaining.substring(0, maxLength);
+			
+			// Try to break at paragraph
+			const lastParagraph = substring.lastIndexOf('\n\n');
+			if (lastParagraph > maxLength * 0.5) {
+				breakPoint = lastParagraph + 2;
+			} else {
+				// Try to break at sentence
+				const lastSentence = Math.max(
+					substring.lastIndexOf('. '),
+					substring.lastIndexOf('! '),
+					substring.lastIndexOf('? ')
+				);
+				if (lastSentence > maxLength * 0.5) {
+					breakPoint = lastSentence + 2;
+				} else {
+					// Break at word boundary
+					const lastSpace = substring.lastIndexOf(' ');
+					if (lastSpace > maxLength * 0.7) {
+						breakPoint = lastSpace + 1;
+					}
+				}
+			}
+
+			chunks.push(remaining.substring(0, breakPoint));
+			remaining = remaining.substring(breakPoint);
+		}
+
+		return chunks;
 	}
 
 	/**
