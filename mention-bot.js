@@ -8,6 +8,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { promisify } = require('util');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const http = require('http');
+const admin = require('firebase-admin');
 
 class MentionBot {
 	constructor() {
@@ -31,12 +32,26 @@ class MentionBot {
 			apiKey: process.env.OPENAI_API_KEY
 		});
 
+		// Initialize Firebase Admin for trading signals notifications
+		try {
+			const serviceAccount = require('./service-account-key.json');
+			admin.initializeApp({
+				credential: admin.credential.cert(serviceAccount)
+			});
+			this.firestore = admin.firestore();
+			console.log('✅ Firebase Admin initialized');
+		} catch (error) {
+			console.error('⚠️  Firebase Admin initialization failed:', error.message);
+			this.firestore = null;
+		}
+
 		// Store documents per channel
 		this.channelDocuments = new Map();
 		
 		// Set up database and event handlers
 		this.initDatabase();
 		this.setupEventHandlers();
+		this.setupNotificationListener();
 	}
 
 	/**
@@ -753,6 +768,88 @@ CRITICAL INSTRUCTIONS:
 				}
 			);
 		});
+	}
+
+	/**
+	 * Set up Firestore listener for trading signals notifications
+	 */
+	setupNotificationListener() {
+		if (!this.firestore) {
+			console.log('⚠️  Firestore not initialized, notifications disabled');
+			return;
+		}
+
+		console.log('👂 Listening for trading signals notifications...');
+		
+		this.firestore.collection('notifications').onSnapshot(async (snapshot) => {
+			snapshot.docChanges().forEach(async (change) => {
+				if (change.type === 'added') {
+					const notification = change.doc.data();
+					
+					if (notification.type === 'signal_update' && !notification.sent) {
+						console.log('🔔 New signal update notification received');
+						await this.sendNotificationsToUsers(notification);
+						
+						// Delete the notification after sending
+						await this.firestore.collection('notifications').doc(change.doc.id).delete();
+						console.log('🗑️  Notification deleted:', change.doc.id);
+					}
+				}
+			});
+		}, (error) => {
+			console.error('❌ Firestore listener error:', error);
+		});
+	}
+
+	/**
+	 * Send trading signals notifications to all users with Discord IDs
+	 */
+	async sendNotificationsToUsers(notification) {
+		try {
+			// Get all users with Discord IDs
+			const usersSnapshot = await this.firestore.collection('users').get();
+			
+			const changes = notification.changes || [];
+			const updatedBy = notification.updatedBy || 'Admin';
+			
+			// Create embed message
+			const embed = new EmbedBuilder()
+				.setTitle('🔔 Trading Signals Updated')
+				.setDescription(changes.length > 0 ? changes.join('\n') : 'Signals have been updated')
+				.setColor(0x3447ff)
+				.setTimestamp()
+				.setFooter({ text: `Updated by ${updatedBy}` });
+			
+			let sentCount = 0;
+			let failedCount = 0;
+			
+			// Send DM to each user with Discord ID
+			for (const userDoc of usersSnapshot.docs) {
+				const userData = userDoc.data();
+				
+				if (userData.discordId) {
+					try {
+						const user = await this.client.users.fetch(userData.discordId);
+						await user.send({ embeds: [embed] });
+						sentCount++;
+						console.log(`✅ Sent notification to ${userDoc.id}`);
+					} catch (error) {
+						failedCount++;
+						console.error(`❌ Failed to send to ${userDoc.id}:`, error.message);
+					}
+					
+					// Rate limit protection (1 message per second)
+					await new Promise(resolve => setTimeout(resolve, 1000));
+				}
+			}
+			
+			console.log(`\n📊 Notification Summary:`);
+			console.log(`   ✅ Sent: ${sentCount}`);
+			console.log(`   ❌ Failed: ${failedCount}\n`);
+			
+		} catch (error) {
+			console.error('❌ Error sending notifications:', error);
+		}
 	}
 
 	/**
