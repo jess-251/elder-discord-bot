@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, EmbedBuilder, AttachmentBuilder, ChannelType } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, AttachmentBuilder, ChannelType } = require('discord.js');
 const OpenAI = require('openai');
 const fs = require('fs').promises;
 const path = require('path');
@@ -11,7 +11,7 @@ const http = require('http');
 
 class MentionBot {
 	constructor() {
-		// Set up Discord client with necessary intents
+		// Set up Discord client with necessary intents and partials for DMs
 		this.client = new Client({
 			intents: [
 				GatewayIntentBits.Guilds,
@@ -19,6 +19,10 @@ class MentionBot {
 				GatewayIntentBits.MessageContent,
 				GatewayIntentBits.GuildMessageReactions,
 				GatewayIntentBits.DirectMessages
+			],
+			partials: [
+				Partials.Channel, // Required for DM support
+				Partials.Message
 			]
 		});
 
