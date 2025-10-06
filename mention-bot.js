@@ -186,19 +186,39 @@ class MentionBot {
 				return;
 			}
 
-			// Show typing indicator
-			await message.channel.sendTyping();
+		// Show typing indicator
+		await message.channel.sendTyping();
 
-		// Only get documents if user is asking to use a specific label
-		let documents = [];
-		if (label) {
-			// User is asking to use a specific memory label
-			documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+	// Check for recent trading signals notification
+	let notificationContext = '';
+	if (this.firestore) {
+		try {
+			const notifDoc = await this.firestore.collection('sentNotifications').doc(message.author.id).get();
+			if (notifDoc.exists) {
+				const notifData = notifDoc.data();
+				const notifTime = notifData.timestamp?.toDate?.() || new Date(0);
+				const timeSince = Date.now() - notifTime.getTime();
+				const minutesAgo = Math.floor(timeSince / 60000);
+				
+				if (timeSince < 3600000) { // Within last hour
+					notificationContext = `\n\n🔔 IMPORTANT - RECENT NOTIFICATION (${minutesAgo} min ago):\nYou recently sent this user a trading signals update:\n${notifData.changes.join('\n')}\n\nIf they ask about "this", "the update", or "explain this", they mean the notification above.`;
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching notification:', error);
 		}
-		// If no label specified, don't load any documents - just do web search
-		
-		// Generate response using AI
-		const response = await this.generateResponse(question, documents, message.channel.id, label);
+	}
+
+	// Only get documents if user is asking to use a specific label
+	let documents = [];
+	if (label) {
+		// User is asking to use a specific memory label
+		documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+	}
+	// If no label specified, don't load any documents - just do web search
+	
+	// Generate response using AI
+	const response = await this.generateResponse(question, documents, message.channel.id, label, notificationContext);
 		
 		// Save conversation to database
 		await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
@@ -274,19 +294,39 @@ class MentionBot {
 				return;
 			}
 
-			// Show typing indicator
-			await message.channel.sendTyping();
+		// Show typing indicator
+		await message.channel.sendTyping();
 
-		// Only get documents if user is asking to use a specific label
-		let documents = [];
-		if (label) {
-			// User is asking to use a specific memory label
-			documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+	// Check for recent trading signals notification
+	let notificationContext = '';
+	if (this.firestore) {
+		try {
+			const notifDoc = await this.firestore.collection('sentNotifications').doc(message.author.id).get();
+			if (notifDoc.exists) {
+				const notifData = notifDoc.data();
+				const notifTime = notifData.timestamp?.toDate?.() || new Date(0);
+				const timeSince = Date.now() - notifTime.getTime();
+				const minutesAgo = Math.floor(timeSince / 60000);
+				
+				if (timeSince < 3600000) { // Within last hour
+					notificationContext = `\n\n🔔 IMPORTANT - RECENT NOTIFICATION (${minutesAgo} min ago):\nYou recently sent this user a trading signals update:\n${notifData.changes.join('\n')}\n\nIf they ask about "this", "the update", or "explain this", they mean the notification above.`;
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching notification:', error);
 		}
-		// If no label specified, don't load any documents - just do web search
-		
-		// Generate response using AI
-		const response = await this.generateResponse(question, documents, message.channel.id, label);
+	}
+
+	// Only get documents if user is asking to use a specific label
+	let documents = [];
+	if (label) {
+		// User is asking to use a specific memory label
+		documents = await this.getChannelDocumentsByLabel(message.channel.id, label);
+	}
+	// If no label specified, don't load any documents - just do web search
+	
+	// Generate response using AI
+	const response = await this.generateResponse(question, documents, message.channel.id, label, notificationContext);
 		
 		// Save conversation to database
 		await this.saveConversation(message.channel.id, message.author.id, label ? `[${label}] ${question}` : question, response);
@@ -560,11 +600,11 @@ class MentionBot {
 	/**
 	 * Generate AI response using OpenAI
 	 */
-	async generateResponse(question, documents, channelId, label) {
+	async generateResponse(question, documents, channelId, label, notificationContext = '') {
 		try {
 			if (documents.length > 0) {
 				// For document-based queries, use uploaded documents
-				let systemPrompt = `You are a helpful AI assistant. Answer clearly and concisely using the provided documents.`;
+				let systemPrompt = `You are a helpful AI assistant. Answer clearly and concisely using the provided documents.${notificationContext}`;
 				let contextInfo = `\n\nYou have access to the following ${label ? `memory set \"${label}\"` : 'documents'} for context. Quote relevant excerpts and be precise.\n\n`;
 				
 				documents.forEach((doc, index) => {
@@ -588,7 +628,7 @@ class MentionBot {
 		} else {
 			// For general queries without documents, do web search
 			const searchResults = await this.performWebSearch(question);
-			const systemPrompt = `You are a helpful AI assistant with access to current information. The user is asking about: "${question}"
+			const systemPrompt = `You are a helpful AI assistant with access to current information.${notificationContext} The user is asking about: "${question}"
 
 Search Results: ${searchResults}
 
@@ -831,6 +871,14 @@ CRITICAL INSTRUCTIONS:
 					try {
 						const user = await this.client.users.fetch(userData.discordId);
 						await user.send({ embeds: [embed] });
+						
+						// Store notification in Firestore for "explain this" feature
+						await this.firestore.collection('sentNotifications').doc(userData.discordId).set({
+							changes: changes,
+							timestamp: admin.firestore.FieldValue.serverTimestamp(),
+							updatedBy: updatedBy
+						});
+						
 						sentCount++;
 						console.log(`✅ Sent notification to ${userDoc.id}`);
 					} catch (error) {
