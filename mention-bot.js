@@ -489,7 +489,7 @@ class MentionBot {
 	}
 
 	/**
-	 * Perform web search for real-time information
+	 * Perform web search for real-time information using Tavily API
 	 */
 	async performWebSearch(query) {
 		try {
@@ -512,14 +512,61 @@ class MentionBot {
 				}
 			}
 			
-			// Try DuckDuckGo Instant Answer API first
+			// Use Tavily API for web search
+			if (process.env.TAVILY_API_KEY) {
+				try {
+					console.log('🔎 Using Tavily API for search...');
+					const tavilyResponse = await fetch('https://api.tavily.com/search', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({
+							api_key: process.env.TAVILY_API_KEY,
+							query: query,
+							search_depth: 'basic',
+							include_answer: true,
+							include_images: false,
+							include_raw_content: false,
+							max_results: 5
+						})
+					});
+					
+					const tavilyData = await tavilyResponse.json();
+					console.log('📊 Tavily API response received');
+					
+					if (tavilyData.answer) {
+						searchResults += `**🔍 Web Search Results:**\n\n${tavilyData.answer}\n\n`;
+					}
+					
+					if (tavilyData.results && tavilyData.results.length > 0) {
+						searchResults += '**📰 Sources:**\n';
+						tavilyData.results.slice(0, 3).forEach((result, index) => {
+							searchResults += `${index + 1}. **${result.title}**\n`;
+							searchResults += `   ${result.content.substring(0, 200)}...\n`;
+							searchResults += `   🔗 ${result.url}\n\n`;
+						});
+					}
+					
+					if (searchResults.trim()) {
+						searchResults += `\n*Sources: Web search via Tavily API - ${new Date().toLocaleString()}*`;
+						console.log('✅ Tavily search successful');
+						return searchResults;
+					}
+				} catch (tavilyError) {
+					console.log('❌ Tavily API search failed:', tavilyError.message);
+					// Continue to fallback
+				}
+			} else {
+				console.log('⚠️  TAVILY_API_KEY not set, skipping Tavily search');
+			}
+			
+			// Try DuckDuckGo Instant Answer API as backup
 			try {
 				const searchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-				console.log(`📡 Fetching from: ${searchUrl}`);
+				console.log(`📡 Trying DuckDuckGo fallback...`);
 				const response = await fetch(searchUrl);
 				const data = await response.json();
-				
-				console.log('📊 DuckDuckGo response:', JSON.stringify(data, null, 2));
 				
 				if (data.Abstract) {
 					searchResults += `**🔍 Search Results:**\n${data.Abstract}\n\n`;
@@ -537,59 +584,16 @@ class MentionBot {
 				
 				// If we have good results, return them
 				if (searchResults.trim()) {
-					console.log('✅ Found search results:', searchResults);
+					console.log('✅ Found search results from DuckDuckGo');
 					return searchResults;
 				}
 			} catch (ddgError) {
 				console.log('❌ DuckDuckGo search failed:', ddgError.message);
 			}
 			
-			// Try alternative search methods for real data
-			try {
-				// Try a different search approach
-				const alternativeSearchUrl = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1&t=discord-bot`;
-				const altResponse = await fetch(alternativeSearchUrl);
-				const altData = await altResponse.json();
-				
-				if (altData.Abstract) {
-					searchResults = `**🔍 Real-Time Search Results:**\n\n${altData.Abstract}\n\n`;
-					if (altData.RelatedTopics && altData.RelatedTopics.length > 0) {
-						searchResults += '**📰 Related Information:**\n';
-						altData.RelatedTopics.slice(0, 2).forEach((topic, index) => {
-							if (topic.Text) {
-								searchResults += `${index + 1}. ${topic.Text}\n`;
-							}
-						});
-					}
-					searchResults += `\n*Source: DuckDuckGo - ${new Date().toLocaleString()}*`;
-					console.log('✅ Alternative search successful');
-					return searchResults;
-				}
-			} catch (altError) {
-				console.log('❌ Alternative search failed:', altError.message);
-			}
-			
-			// Enhanced fallback with current context (limited to prevent token overflow)
-			const currentDate = new Date().toLocaleDateString();
-			searchResults = `**🔍 Search Results (${currentDate}):**\n\n`;
-			
-			// Provide specific current context based on query (keep it concise)
-			const lowerQueryFallback = query.toLowerCase();
-			
-			if (lowerQueryFallback.includes('ai') || lowerQueryFallback.includes('artificial intelligence') || lowerQueryFallback.includes('chatgpt') || lowerQueryFallback.includes('openai')) {
-				searchResults += `🤖 **AI Developments:** AI technology continues rapid advancement with new models, regulatory discussions, and widespread integration across industries. Recent trends include multimodal AI, improved reasoning capabilities, and integration into various sectors.`;
-			} else if (lowerQueryFallback.includes('crypto') || lowerQueryFallback.includes('bitcoin') || lowerQueryFallback.includes('ethereum') || lowerQueryFallback.includes('bnb') || lowerQueryFallback.includes('binance') || lowerQueryFallback.includes('cryptocurrency') || lowerQueryFallback.includes('blockchain') || lowerQueryFallback.includes('defi') || lowerQueryFallback.includes('nft')) {
-				searchResults += `₿ **Cryptocurrency Updates:** Cryptocurrency markets remain highly volatile with ongoing regulatory developments, institutional adoption, and technological innovations. Recent trends include DeFi protocols, NFT markets, and blockchain scalability solutions driving innovation.`;
-			} else if (lowerQueryFallback.includes('stock') || lowerQueryFallback.includes('market') || lowerQueryFallback.includes('trading') || lowerQueryFallback.includes('stocks') || lowerQueryFallback.includes('investment') || lowerQueryFallback.includes('finance') || lowerQueryFallback.includes('economy') || lowerQueryFallback.includes('price') || lowerQueryFallback.includes('interest rate')) {
-				searchResults += `📈 **Market Updates:** Stock markets continue to be influenced by economic indicators, corporate earnings, and central bank policies. Global economic conditions, geopolitical events, and interest rate changes significantly impact market performance.`;
-			} else if (lowerQueryFallback.includes('news') || lowerQueryFallback.includes('latest') || lowerQueryFallback.includes('breaking')) {
-				searchResults += `📰 **Current News Context:** Global events continue to unfold across politics, technology, and economics with real-time coverage available. Breaking news develops rapidly and requires current monitoring through major news outlets and digital platforms.`;
-			} else {
-				searchResults += `📊 **Current Status:** This topic is actively evolving with ongoing developments requiring current monitoring. Information changes frequently and multiple sources provide real-time updates on this subject.`;
-			}
-			
-			console.log('📝 Generated fallback response:', searchResults);
-			return searchResults;
+			// Final fallback - be honest about limitations
+			console.log('⚠️  All search methods failed, returning limitation notice');
+			return `**⚠️ Search Unavailable:**\n\nI wasn't able to retrieve current information about "${query}" at this time. This could be because:\n\n• The Tavily API key is not configured (required for web search)\n• The topic is very recent or specialized\n• Search services are temporarily unavailable\n\n**To enable real-time web search:**\n1. Get a free API key from https://tavily.com\n2. Add it to your .env file as TAVILY_API_KEY\n\n**For now, please:**\n• Check recent news sources directly\n• Try rephrasing your question\n• Ask about topics I can help with from my training data\n\n*Last updated: ${new Date().toLocaleString()}*`;
 			
 		} catch (error) {
 			console.error('❌ Web search error:', error);
