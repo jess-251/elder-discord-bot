@@ -524,33 +524,40 @@ class MentionBot {
 						body: JSON.stringify({
 							api_key: process.env.TAVILY_API_KEY,
 							query: query,
-							search_depth: 'basic',
+							search_depth: 'advanced',  // Changed to advanced for deeper search
 							include_answer: true,
 							include_images: false,
 							include_raw_content: false,
-							max_results: 5
+							max_results: 10,  // Increased to get more sources
+							include_domains: [],
+							exclude_domains: []
 						})
 					});
 					
 					const tavilyData = await tavilyResponse.json();
-					console.log('📊 Tavily API response received');
+					console.log('📊 Tavily API response received:', JSON.stringify(tavilyData).substring(0, 500));
 					
-					if (tavilyData.answer) {
-						searchResults += `**🔍 Web Search Results:**\n\n${tavilyData.answer}\n\n`;
-					}
+					// Build comprehensive search results
+					let detailedResults = '';
 					
 					if (tavilyData.results && tavilyData.results.length > 0) {
-						searchResults += '**📰 Sources:**\n';
-						tavilyData.results.slice(0, 3).forEach((result, index) => {
-							searchResults += `${index + 1}. **${result.title}**\n`;
-							searchResults += `   ${result.content.substring(0, 200)}...\n`;
-							searchResults += `   🔗 ${result.url}\n\n`;
+						// Include ALL content from search results for the AI to analyze
+						detailedResults += '**📚 Detailed Information from Web Sources:**\n\n';
+						tavilyData.results.forEach((result, index) => {
+							detailedResults += `**Source ${index + 1}: ${result.title}**\n`;
+							detailedResults += `${result.content}\n`;
+							detailedResults += `URL: ${result.url}\n\n`;
 						});
+						detailedResults += `---\n\n`;
 					}
 					
-					if (searchResults.trim()) {
-						searchResults += `\n*Sources: Web search via Tavily API - ${new Date().toLocaleString()}*`;
-						console.log('✅ Tavily search successful');
+					if (tavilyData.answer) {
+						detailedResults += `**AI Summary:**\n${tavilyData.answer}\n\n`;
+					}
+					
+					if (detailedResults.trim()) {
+						searchResults = detailedResults + `*Data gathered from ${tavilyData.results?.length || 0} web sources - ${new Date().toLocaleString()}*`;
+						console.log('✅ Tavily advanced search successful with', tavilyData.results?.length, 'sources');
 						return searchResults;
 					}
 				} catch (tavilyError) {
@@ -632,32 +639,39 @@ class MentionBot {
 		} else {
 			// For general queries without documents, do web search
 			const searchResults = await this.performWebSearch(question);
-			const systemPrompt = `You are a helpful AI assistant with access to current information.${notificationContext} The user is asking about: "${question}"
+			const systemPrompt = `You are Elder, a highly knowledgeable AI assistant with access to live web search results.${notificationContext} The user is asking: "${question}"
 
-Search Results: ${searchResults}
+=== LIVE WEB SEARCH RESULTS ===
+${searchResults}
+=== END SEARCH RESULTS ===
 
-CRITICAL INSTRUCTIONS:
-1. Use the search results above to provide a comprehensive, detailed answer
-2. Do NOT say "I don't have access to real-time data" or "I recommend checking elsewhere"
-3. If you have search results, use them to give a thorough analysis
-4. If you have financial data, show the actual numbers and prices
-5. Be specific and factual - provide the information the user is asking for
-6. Structure your response with clear sections and bullet points
-7. Quote specific information from the search results when possible
-8. If the search results are limited, acknowledge this but still provide what you can find`;
+CRITICAL INSTRUCTIONS FOR SYNTHESIS:
+1. **READ AND ANALYZE ALL SOURCES ABOVE** - Don't just skim, deeply analyze every piece of information
+2. **EXTRACT SPECIFIC DETAILS** - Pull out exact facts, numbers, dates, names, events, and context
+3. **STRUCTURE YOUR ANSWER** - Create clear sections addressing each part of the user's question
+4. **BE COMPREHENSIVE** - Combine information from multiple sources to give a complete picture
+5. **QUOTE KEY INFORMATION** - When sources provide important details, reference or quote them
+6. **SHOW YOUR WORK** - Demonstrate you've read the sources by using specific information from them
+7. **DO NOT BE VAGUE** - Instead of "faced challenges," say WHAT challenges and WHEN
+8. **DO NOT SAY** "search results don't provide details" unless info is truly absent across ALL sources
+9. **IF INFO IS LIMITED** - Say what you DO know, then acknowledge what's unclear
+10. **INCLUDE CONTEXT** - Provide background, implications, and related information
+
+Format: Use clear headers, bullet points, and organize by topic. Make it easy to read and informative.
+Goal: Provide a thorough, detailed answer that shows deep analysis of all available sources.`;
 
 			const completion = await this.openai.chat.completions.create({
 				model: 'gpt-4o',
 				messages: [
 					{ role: 'system', content: systemPrompt },
-					{ role: 'user', content: `Please provide current information about: ${question}` }
+					{ role: 'user', content: question }
 				],
-				max_tokens: 1000,
-				temperature: 0.4
+				max_tokens: 2000,  // Increased for more detailed responses
+				temperature: 0.3   // Lower for more factual, focused responses
 			});
 
 			const response = completion.choices[0].message.content;
-			return this.truncateToCharacterLimit(response, 2000);
+			return this.truncateToCharacterLimit(response, 3500);  // Increased character limit
 			}
 
 		} catch (error) {
